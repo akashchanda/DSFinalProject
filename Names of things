@@ -1,0 +1,4 @@
+  WordObject name = WordObject
+  Fields: word, occurrences
+  methods: getWord(), getOccurences(), incrementOccurrences()
+  table of alphabet table of index: alphabetTable 
