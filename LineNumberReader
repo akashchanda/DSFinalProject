@@ -1,0 +1,15 @@
+    String fileName = args[0];
+		File file = new File(fileName);
+		FileReader fileReader = new FileReader(file);
+		Long startTime = System.currentTimeMillis();
+		LineNumberReader  lnr = new LineNumberReader(fileReader);
+		lnr.skip(Long.MAX_VALUE);
+		System.out.println(lnr.getLineNumber() + 1); //Add 1 because line index starts at 0
+		Long endTime = System.currentTimeMillis();
+		// Finally, the LineNumberReader object should be closed to prevent resource leak
+		lnr.close();
+		System.out.println(endTime - startTime);
+    
+    links: 
+    http://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
+    https://docs.oracle.com/javase/7/docs/api/java/io/LineNumberReader.html
