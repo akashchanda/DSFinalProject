@@ -42,6 +42,8 @@ public class SmartWord {
 	int patternLowRange;
 	int patternHighRange;
 	ArrayList<String> wrongWords = new ArrayList<String>();
+	double averageSentenceLength = 0.0;
+	int globalWordPos;
 	
 	/**
 	 * main method, used for testing of parts of the program only as it is not executed when EvalSmartWord.java
@@ -134,6 +136,8 @@ public class SmartWord {
 	 * @throws IOException
 	 */
 	public void processOldMessages (String oldMessageFile) throws IOException {
+		//hardcoded input files
+		String customInputFileName = "addin1.txt";
 		//process old messages
 		if (!oldMessageFile.equals("") && !oldMessageFile.equals(null)) {
 
@@ -141,9 +145,15 @@ public class SmartWord {
 			
 
 				BufferedReader br = new BufferedReader(new FileReader(oldMessageFile));
-				
-				while ((readLine = br.readLine()) != null) {
+				double totalSentLength = 0;
+				int numOfSents = 0;
+				boolean done = false;
+				boolean initDone = false;
+				//while ((readLine = br.readLine()) != null)
+				while (!done) {
 					String[] allItemsPerLine = readLine.split(" ");
+					totalSentLength += allItemsPerLine.length;
+					numOfSents++;
 					for (int i = 0; i < allItemsPerLine.length; i++) {
 						String word = allItemsPerLine[i].replaceAll("[^a-zA-Z]", "");
 						word = word.toLowerCase();
@@ -155,16 +165,29 @@ public class SmartWord {
 						if (index == -1) {
 							WordObject newWord = new WordObject(word);
 							dictionary.add(newWord);
-							dictionary.get(dictionary.size() - 1).increaseOccurences(i);
+							dictionary.get(dictionary.size() - 1).increaseOccurences((double)(i + 1) / (double)allItemsPerLine.length);
 							Collections.sort(dictionary);
 							for (int j = newWord.getWord().charAt(0) - 96; j < 26; j++) {
 								letterIndices[j]++;
 							}
 						} else {
-							dictionary.get(index).increaseOccurences(i);
+							dictionary.get(index).increaseOccurences((double)(i + 1) / (double)allItemsPerLine.length);
 						}
 					}
+					if ((readLine = br.readLine()) == null) {
+						done = true;
+						initDone = true;
+						if (!initDone) {
+							br = new BufferedReader(new FileReader(customInputFileName));
+							readLine = br.readLine();
+							initDone = true;
+						} else {
+							done = true;
+						}
+						
+					}
 				}
+				averageSentenceLength = totalSentLength /  numOfSents;
 				br.close();
 		}
 	}
@@ -217,6 +240,9 @@ public class SmartWord {
 	 * that are the programs guesses for what word is being typed
 	 */
 	public String[] guess (char letter, int letterPosition, int wordPosition) {
+		wordPosition++; //done to change zero-indexing to indexing starting at 1
+		globalWordPos = wordPosition;
+		double relativeWordPos = wordPosition / (averageSentenceLength);
 		if (letterPosition == 0) {
 			patternLowRange = letterIndices[letter - 97];
 			if (letter == 'z') {
@@ -234,6 +260,8 @@ public class SmartWord {
 		//pre-population
 		int wordsInGuesses = 0;
 		int itemsPassed = 0;
+		//System.out.printf("FIRST: LOW IS %d; HIGH IS %d; WORD AT LOW IS %s%n", patternLowRange, patternHighRange, dictionary.get(patternLowRange).getWord());
+		//System.out.printf("PATTERN IS %s; PATTERN LENGTH IS %d%n", pattern, pattern.length());
 		while (wordsInGuesses < 3) {
 			if (wrongWords.contains(dictionary.get(patternLowRange + itemsPassed).getWord())) {
 				itemsPassed++;
@@ -242,40 +270,19 @@ public class SmartWord {
 				guesses[wordsInGuesses - 1] = dictionary.get(patternLowRange + itemsPassed).getWord();
 				guessLocations[wordsInGuesses - 1] = patternLowRange + itemsPassed;
 				WordObject current = dictionary.get(patternLowRange + itemsPassed);
-				double lengthDiff = 1 - (Math.abs(Double.valueOf(pattern.length()) -
-						Double.valueOf(current.getWord().length())) / (Double.valueOf(current.getWord().length())));
-				double doubleWordPos = Double.valueOf(wordPosition);
-				double averageWordPositionDifference = Math.abs(1 - (current.avgWordPos / wordPosition));
-				//other possible probability equations that are being tested
-				//double probability = (lengthDiff) * (current.occurences) / (averageWordPositionDifference);
-				//double probability = Math.pow(lengthDiff, 2) * Math.pow(current.occurences, 2);
-				double probability;
-				if (current.occurences == 0) {
-					probability = lengthDiff * 0.5;
-				} else {
-					probability = lengthDiff * current.occurences;
-				}
+				double probability = getProbability(current, wordPosition, relativeWordPos);
 				itemsPassed++;
 				probs[wordsInGuesses - 1] = probability;
 			}
 			
 		}
-		//guessing
+		
+		//guessing		
+		
+		//System.out.printf("SECOND: LOW IS %d; HIGH IS %d; WORD AT LOW IS %s%n", patternLowRange + itemsPassed, patternHighRange, dictionary.get(patternLowRange + itemsPassed).getWord());
 		for (int i = patternLowRange + itemsPassed; i < patternHighRange; i++) {
 			WordObject current = dictionary.get(i);
-			double lengthDiff = 1 - (Math.abs(Double.valueOf(pattern.length()) -
-					Double.valueOf(current.getWord().length())) / (Double.valueOf(current.getWord().length())));
-			double doubleWordPos = Double.valueOf(wordPosition);
-			double averageWordPositionDifference = Math.abs(1 - (current.avgWordPos / wordPosition));
-			//other possible probability equations that are being tested
-			//double probability = (lengthDiff) * (current.occurences) / (averageWordPositionDifference);
-			//double probability = Math.pow(lengthDiff, 2) * Math.pow(current.occurences, 2);
-			double probability;
-			if (current.occurences == 0) {
-				probability = lengthDiff * 0.5;
-			} else {
-				probability = lengthDiff * current.occurences;
-			}
+			double probability = getProbability(current, wordPosition, relativeWordPos);
 			for (int k = 0; k < 3; k++) {
 				if (probability > probs[k] && !wrongWords.contains(current.getWord())) {
 					probs[k] = probability;
@@ -286,6 +293,42 @@ public class SmartWord {
 			}
 		}
 		return guesses;
+	}
+	
+	public double getProbability (WordObject current, int wordPosition, double relativeWordPos) {
+		double lengthDiff = 1 - (Math.abs(Double.valueOf(pattern.length()) -
+				Double.valueOf(current.getWord().length())) / (Double.valueOf(current.getWord().length())));
+		double doubleWordPos = Double.valueOf(wordPosition);
+		//double averageWordPositionDifference = (current.avgWordPos - wordPosition == 0 ? (0.99) :
+		//	(Math.abs(current.avgWordPos - wordPosition)));
+		double averageWordPositionDifference = 1 - (Math.abs(current.avgWordPos - relativeWordPos)) ;
+		if (relativeWordPos > 1.0) {
+			averageWordPositionDifference = 1 - (Math.abs(current.avgWordPos - 1.0)) ;
+		}
+		//other possible probability equations that are being tested
+		//double probability = (lengthDiff) * (current.occurences) / (averageWordPositionDifference);
+		//double probability = Math.pow(lengthDiff, 2) * Math.pow(current.occurences, 2);
+		double probability;
+		if (current.getWord().length() >= 4 && pattern.equals(current.getWord())){
+			//System.out.println("222THIS HAS HAPPENED");
+			//System.out.printf("PATTERN IS %s%n", pattern);
+			probability = Double.POSITIVE_INFINITY;
+		} else if (current.occurences == 0) {
+			probability = lengthDiff * 0.5;
+		} else {
+			if (current.getWord().length() >= 4) {
+				//comment/uncomment to change whether avgWordPos is being factored in to probablity
+				probability = lengthDiff * current.occurences;
+				//probability = lengthDiff * current.occurences * (1 + averageWordPositionDifference);
+			} else {
+				probability = lengthDiff * current.occurences;
+			}
+			
+			
+		}
+		//*  (1 + (1 / averageWordPositionDifference))
+		// * (1 + averageWordPositionDifference)
+		return probability;
 	}
 	
 	/**
@@ -326,7 +369,7 @@ public class SmartWord {
 			}
 			mid = low + ((high - low) / 2);
 		}
-		lowHigh[0] = low;
+		lowHigh[0] = low - 1;
 		low = patternLowRange;
 		high = patternHighRange;
 		mid = low + ((high - low) / 2);
@@ -385,6 +428,18 @@ public class SmartWord {
 			guesses = new String[3];
 			pattern = "";
 			wrongWords = new ArrayList<String>();
+			int index = binarySearchSimple(correctWord);
+			if (index == -1) {
+				WordObject newWord = new WordObject(correctWord);
+				dictionary.add(newWord);
+				dictionary.get(dictionary.size() - 1).increaseOccurences((double)(globalWordPos) / ( averageSentenceLength));
+				Collections.sort(dictionary);
+				for (int j = newWord.getWord().charAt(0) - 96; j < 26; j++) {
+					letterIndices[j]++;
+				}
+			} else {
+				dictionary.get(index).increaseOccurences((double)(globalWordPos) / ( averageSentenceLength));
+			}
 		}
 	}
 	
@@ -409,7 +464,10 @@ public class SmartWord {
 		}
 		
 		public void increaseOccurences (double newWordPos) {
-			avgWordPos = ((avgWordPos * occurences) + newWordPos) / (++occurences);
+			int oldOc = occurences;
+			occurences++;
+			avgWordPos = ((avgWordPos * (double) oldOc) + newWordPos) / (double) (occurences);
+			//System.out.printf("avgWordPos: %f; newWordPos: %f%n",avgWordPos, newWordPos);
 		}
 
 		@Override
