@@ -316,12 +316,12 @@ public class SmartWord {
 		} else if (current.occurences == 0) {
 			probability = lengthDiff * 0.5;
 		} else {
-			if (current.getWord().length() >= 4) {
-				//comment/uncomment to change whether avgWordPos is being factored in to probablity
-				probability = lengthDiff * current.occurences;
-				//probability = lengthDiff * current.occurences * (1 + averageWordPositionDifference);
+			if (current.getWord().length() >= 3) {
+				//comment/uncomment to change whether avgWordPos is being factored in to probability
+				//probability = lengthDiff * current.occurences;
+				probability = lengthDiff *  Math.pow(current.occurences, 1) * Math.pow((1 + averageWordPositionDifference), .8);
 			} else {
-				probability = lengthDiff * current.occurences;
+				probability = lengthDiff *  Math.pow(current.occurences, 1);
 			}
 			
 			
