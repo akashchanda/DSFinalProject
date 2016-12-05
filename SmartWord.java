@@ -139,6 +139,7 @@ public class SmartWord {
 	public void processOldMessages (String oldMessageFile) throws IOException {
 		//hardcoded input files
 		String customInputFileName = "addin1.txt";
+		
 		//process old messages
 		if (!oldMessageFile.equals("") && !oldMessageFile.equals(null)) {
 
