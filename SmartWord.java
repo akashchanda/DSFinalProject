@@ -165,9 +165,9 @@ public class SmartWord {
 						int index = binarySearchSimple(word);
 						if (index == -1) {
 							WordObject newWord = new WordObject(word);
-							dictionary.add(newWord);
-							dictionary.get(dictionary.size() - 1).increaseOccurences((double)(i + 1) / (double)allItemsPerLine.length);
-							Collections.sort(dictionary);
+							int indexToInsertAt = findInsertPos(word) + 1;
+							dictionary.add(indexToInsertAt, newWord);
+							dictionary.get(indexToInsertAt).increaseOccurences((double)(i + 1) / (double)allItemsPerLine.length);
 							for (int j = newWord.getWord().charAt(0) - 96; j < 26; j++) {
 								letterIndices[j]++;
 							}
