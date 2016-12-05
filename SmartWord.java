@@ -435,11 +435,10 @@ public class SmartWord {
 			int index = binarySearchSimple(correctWord);
 			if (index == -1) {
 				WordObject newWord = new WordObject(correctWord);
-				dictionary.add(newWord);
+				int indexToInsertAt = findInsertPos(correctWord) + 1;
+				dictionary.add(indexToInsertAt, newWord);
 				//System.out.printf("last word is %s; correctWord is %s%n",dictionary.get(dictionary.size() - 1).getWord(), correctWord);
-				dictionary.get(dictionary.size() - 1).increaseOccurences((double)(globalWordPos) / ( averageSentenceLength));
-				Collections.sort(dictionary);
-				//simpleSort();
+				dictionary.get(indexToInsertAt).increaseOccurences((double)(globalWordPos) / ( averageSentenceLength));
 				for (int j = newWord.getWord().charAt(0) - 96; j < 26; j++) {
 					letterIndices[j]++;
 				}
@@ -449,12 +448,7 @@ public class SmartWord {
 			}
 		}
 	}
-	
-	public static void simpleSort () {
-		int insertPosition = findInsertPos(dictionary.get(dictionary.size() - 1).getWord());
-		WordObject temp = dictionary.get(dictionary.size() - 1);
-		//for (int i = insertPosition + 1; i <
-	}
+
 	
 	public static int findInsertPos (String word) {
 		int low = letterIndices[word.charAt(0) - 97];
