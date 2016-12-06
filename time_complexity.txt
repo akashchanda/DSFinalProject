@@ -1,0 +1,22 @@
+constructor
+	n = number of words in the dictionary file
+	worst case: O(n);
+	best case: O(n);
+	
+Pre-processing to process old text
+	n = number of words in the old text file
+	worst case: n log n (where the log n is on the scale of log n but is actually much smaller, close to log ( n/26) (on average))
+	best case: same thing
+	
+Guessing
+	n = number of words in the new text file
+	m = number of characters per word
+	worst and best case are both n * m * log(n), with log n having the same property as above
+	
+Feedback
+	n = number of words in the new text file
+	m = number of characters per word
+	best case: every word is guessed after the first letter
+		O(1) time
+	worst case: every word is never guessed
+		O(n * log(n)), with log n having the same property as above
